@@ -37,7 +37,7 @@ def main(_):
     settings.vocab_size = len(wordembedding)
     settings.num_classes = len(train_y[0])
 
-    big_num = settings.big_num
+    batch_size = settings.batch_size
 
     with tf.Graph().as_default():
 
@@ -69,7 +69,7 @@ def main(_):
             # embedding_conf.metadata_path = 'data/metadata.tsv'
             # projector.visualize_embeddings(summary_embed_writer, config)
 
-            def train_step(word_batch, pos1_batch, pos2_batch, y_batch, big_num):
+            def train_step(word_batch, pos1_batch, pos2_batch, y_batch, batch_size):
 
                 feed_dict = {}
                 total_shape = []
@@ -102,7 +102,7 @@ def main(_):
                     [train_op, global_step, m.total_loss, m.accuracy, merged_summary, m.l2_loss, m.final_loss],
                     feed_dict)
                 time_str = datetime.datetime.now().isoformat()
-                accuracy = np.reshape(np.array(accuracy), (big_num))
+                accuracy = np.reshape(np.array(accuracy), (batch_size))
                 acc = np.mean(accuracy)
                 summary_writer.add_summary(summary, step)
 
@@ -120,14 +120,14 @@ def main(_):
                 # Python3's range is identical to python2's xrange. The old range no longer exists.
                 temp_order = list(range(len(train_word)))
                 np.random.shuffle(temp_order)
-                for i in range(int(len(temp_order) / float(settings.big_num))):
+                for i in range(int(len(temp_order) / float(settings.batch_size))):
 
                     temp_word = []
                     temp_pos1 = []
                     temp_pos2 = []
                     temp_y = []
 
-                    temp_input = temp_order[i * settings.big_num:(i + 1) * settings.big_num]
+                    temp_input = temp_order[i * settings.batch_size:(i + 1) * settings.batch_size]
                     for k in temp_input:
                         temp_word.append(train_word[k])
                         temp_pos1.append(train_pos1[k])
@@ -146,7 +146,7 @@ def main(_):
                     temp_pos2 = np.array(temp_pos2)
                     temp_y = np.array(temp_y)
 
-                    train_step(temp_word, temp_pos1, temp_pos2, temp_y, settings.big_num)
+                    train_step(temp_word, temp_pos1, temp_pos2, temp_y, settings.batch_size)
 
                     current_step = tf.train.global_step(sess, global_step)
                     if current_step > 9000 and current_step % 500 == 0:
